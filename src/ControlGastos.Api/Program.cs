@@ -1,4 +1,6 @@
+using ControlGastos.Core.Interfaces;
 using ControlGastos.Infrastructure.Data;
+using ControlGastos.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,8 @@ builder.Services.AddDbContext<ControlGastosDbContext>(options =>
 {
     options.UseNpgsql(connectionString);
 });
+
+builder.Services.AddScoped<ICategoriaGastoRepository, CategoriaGastoRepository>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
