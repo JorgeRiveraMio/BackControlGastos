@@ -1,0 +1,73 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "ControlGastos: Build",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$msCompile",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "ControlGastos: Run API",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "src/ControlGastos.Api/ControlGastos.Api.csproj"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "ControlGastos: Clean",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "clean"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "ControlGastos: Restore",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "restore"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "ControlGastos: Build and Run API",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "ControlGastos: Build",
+        "ControlGastos: Run API"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

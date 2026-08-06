@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "ControlGastos.Api",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "ControlGastos: Build",
+      "program": "${workspaceFolder}/src/ControlGastos.Api/bin/Debug/net10.0/ControlGastos.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/ControlGastos.Api",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5130"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+        "uriFormat": "%s/api/health"
+      }
+    }
+  ]
+}
