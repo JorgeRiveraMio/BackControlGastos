@@ -110,6 +110,58 @@ public sealed class GastoRepository(ControlGastosDbContext dbContext) : IGastoRe
         return true;
     }
 
+    public Task<GastoComprobante_DTO?> ObtenerComprobanteAsync(
+        long idGasto,
+        Guid idUsuario,
+        CancellationToken cancellationToken)
+    {
+        return dbContext.Gastos
+            .AsNoTracking()
+            .Where(gasto => gasto.IdGasto == idGasto && gasto.IdUsuario == idUsuario)
+            .Select(gasto => new GastoComprobante_DTO
+            {
+                RutaArchivo = gasto.RutaComprobante,
+                NombreArchivo = gasto.NombreComprobante
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<bool> ActualizarComprobanteAsync(
+        long idGasto,
+        Guid idUsuario,
+        ComprobanteSubido_DTO comprobante,
+        CancellationToken cancellationToken)
+    {
+        var gasto = await ObtenerGastoParaComprobanteAsync(idGasto, idUsuario, cancellationToken);
+        if (gasto is null)
+        {
+            return false;
+        }
+
+        gasto.RutaComprobante = comprobante.RutaArchivo;
+        gasto.NombreComprobante = comprobante.NombreArchivo;
+        gasto.FechaActualizacion = DateTimeOffset.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> EliminarComprobanteAsync(long idGasto, Guid idUsuario, CancellationToken cancellationToken)
+    {
+        var gasto = await ObtenerGastoParaComprobanteAsync(idGasto, idUsuario, cancellationToken);
+        if (gasto is null)
+        {
+            return false;
+        }
+
+        gasto.RutaComprobante = null;
+        gasto.NombreComprobante = null;
+        gasto.FechaActualizacion = DateTimeOffset.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     private IQueryable<Gasto_Listar_DTO> CrearConsultaListado()
     {
         return from gasto in dbContext.Gastos.AsNoTracking()
@@ -134,6 +186,14 @@ public sealed class GastoRepository(ControlGastosDbContext dbContext) : IGastoRe
                    CodOrigen = gasto.CodOrigen
                };
     }
+
+    private Task<Gasto?> ObtenerGastoParaComprobanteAsync(
+        long idGasto,
+        Guid idUsuario,
+        CancellationToken cancellationToken) =>
+        dbContext.Gastos.SingleOrDefaultAsync(
+            gasto => gasto.IdGasto == idGasto && gasto.IdUsuario == idUsuario,
+            cancellationToken);
 
     private async Task ValidarCategoriaYMedioPagoAsync(
         int idCategoriaGasto,

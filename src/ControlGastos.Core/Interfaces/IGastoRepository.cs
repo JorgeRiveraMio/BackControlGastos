@@ -24,4 +24,17 @@ public interface IGastoRepository
         CancellationToken cancellationToken);
 
     Task<bool> AnularAsync(long idGasto, Guid idUsuario, CancellationToken cancellationToken);
+
+    Task<GastoComprobante_DTO?> ObtenerComprobanteAsync(
+        long idGasto,
+        Guid idUsuario,
+        CancellationToken cancellationToken);
+
+    Task<bool> ActualizarComprobanteAsync(
+        long idGasto,
+        Guid idUsuario,
+        ComprobanteSubido_DTO comprobante,
+        CancellationToken cancellationToken);
+
+    Task<bool> EliminarComprobanteAsync(long idGasto, Guid idUsuario, CancellationToken cancellationToken);
 }

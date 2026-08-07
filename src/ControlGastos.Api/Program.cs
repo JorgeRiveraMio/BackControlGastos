@@ -1,6 +1,7 @@
 using ControlGastos.Core.Interfaces;
 using ControlGastos.Infrastructure.Data;
 using ControlGastos.Infrastructure.Repositories;
+using ControlGastos.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,9 @@ builder.Services.AddDbContext<ControlGastosDbContext>(options =>
 
 builder.Services.AddScoped<ICategoriaGastoRepository, CategoriaGastoRepository>();
 builder.Services.AddScoped<IGastoRepository, GastoRepository>();
+builder.Services.Configure<SupabaseOptions>(builder.Configuration.GetSection(SupabaseOptions.SectionName));
+builder.Services.AddHttpClient<IComprobanteStorageService, SupabaseComprobanteStorageService>();
+builder.Services.AddScoped<IGastoComprobanteService, GastoComprobanteService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();

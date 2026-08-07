@@ -24,6 +24,6 @@ public sealed class GastoConfiguration : IEntityTypeConfiguration<Gasto>
         builder.Property(gasto => gasto.RutaComprobante).HasColumnName("rut_comprobante").HasMaxLength(500);
         builder.Property(gasto => gasto.NombreComprobante).HasColumnName("nom_comprobante").HasMaxLength(250);
         builder.Property(gasto => gasto.FechaRegistro).HasColumnName("fec_regis").IsRequired();
-        builder.Property(gasto => gasto.FechaActualizacion).HasColumnName("fec_actualizacion").IsRequired();
+        builder.Property(gasto => gasto.FechaActualizacion).HasColumnName("fec_actualizacion");
     }
 }

@@ -7,7 +7,9 @@ namespace ControlGastos.Api.Controllers;
 
 [ApiController]
 [Route("api/gastos")]
-public sealed class GastosController(IGastoRepository gastoRepository) : ControllerBase
+public sealed class GastosController(
+    IGastoRepository gastoRepository,
+    IGastoComprobanteService gastoComprobanteService) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<Gasto_Registrado_DTO>), StatusCodes.Status201Created)]
@@ -152,6 +154,122 @@ public sealed class GastosController(IGastoRepository gastoRepository) : Control
         });
     }
 
+    [HttpPost("{idGasto:long}/comprobante")]
+    public async Task<ActionResult<ApiResponse<ComprobanteCargado_DTO>>> SubirComprobanteAsync(
+        long idGasto,
+        Guid idUsuario,
+        [FromForm] IFormFile? archivo,
+        CancellationToken cancellationToken)
+    {
+        if (idGasto <= 0 || idUsuario == Guid.Empty)
+        {
+            return BadRequest(Error("El id del gasto y el id del usuario son obligatorios."));
+        }
+
+        var gasto = await gastoRepository.ObtenerComprobanteAsync(idGasto, idUsuario, cancellationToken);
+        if (gasto is null)
+        {
+            return NotFound(Error("No se encontró el gasto solicitado."));
+        }
+
+        var error = ValidarArchivo(archivo);
+        if (error is not null)
+        {
+            return BadRequest(Error(error));
+        }
+
+        try
+        {
+            await using var contenido = archivo!.OpenReadStream();
+            var comprobante = await gastoComprobanteService.SubirAsync(
+                idUsuario,
+                idGasto,
+                contenido,
+                archivo.FileName,
+                archivo.ContentType,
+                cancellationToken);
+
+            if (comprobante is null)
+            {
+                return NotFound(Error("No se encontró el gasto solicitado."));
+            }
+
+            return Ok(new ApiResponse<ComprobanteCargado_DTO>
+            {
+                IsOk = true,
+                Message = "Comprobante cargado correctamente.",
+                Data = new ComprobanteCargado_DTO(comprobante.NombreArchivo)
+            });
+        }
+        catch (StorageServiceException exception)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, Error(exception.Message));
+        }
+    }
+
+    [HttpGet("{idGasto:long}/comprobante")]
+    public async Task<ActionResult<ApiResponse<ComprobanteUrl_DTO>>> ObtenerComprobanteAsync(
+        long idGasto,
+        Guid idUsuario,
+        CancellationToken cancellationToken)
+    {
+        if (idGasto <= 0 || idUsuario == Guid.Empty)
+        {
+            return BadRequest(Error("El id del gasto y el id del usuario son obligatorios."));
+        }
+
+        try
+        {
+            var comprobante = await gastoComprobanteService.ObtenerUrlAsync(idUsuario, idGasto, cancellationToken);
+            if (comprobante is null)
+            {
+                return NotFound(Error("No se encontró un comprobante para el gasto solicitado."));
+            }
+
+            return Ok(new ApiResponse<ComprobanteUrl_DTO>
+            {
+                IsOk = true,
+                Message = "Comprobante obtenido correctamente.",
+                Data = comprobante
+            });
+        }
+        catch (StorageServiceException exception)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, Error(exception.Message));
+        }
+    }
+
+    [HttpDelete("{idGasto:long}/comprobante")]
+    public async Task<ActionResult<ApiResponse<object>>> EliminarComprobanteAsync(
+        long idGasto,
+        Guid idUsuario,
+        CancellationToken cancellationToken)
+    {
+        if (idGasto <= 0 || idUsuario == Guid.Empty)
+        {
+            return BadRequest(Error("El id del gasto y el id del usuario son obligatorios."));
+        }
+
+        try
+        {
+            var eliminado = await gastoComprobanteService.EliminarAsync(idUsuario, idGasto, cancellationToken);
+            if (!eliminado)
+            {
+                return NotFound(Error("No se encontró un comprobante para el gasto solicitado."));
+            }
+
+            return Ok(new ApiResponse<object>
+            {
+                IsOk = true,
+                Message = "Comprobante eliminado correctamente."
+            });
+        }
+        catch (StorageServiceException exception)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, Error(exception.Message));
+        }
+    }
+
     private static string? ValidarRegistro(Gasto_Registrar_DTO dto)
     {
         if (dto.IdUsuario == Guid.Empty)
@@ -210,6 +328,30 @@ public sealed class GastosController(IGastoRepository gastoRepository) : Control
         }
 
         return mes is < 1 or > 12 ? "El mes debe estar entre 1 y 12." : null;
+    }
+
+    private static string? ValidarArchivo(IFormFile? archivo)
+    {
+        if (archivo is null || archivo.Length == 0)
+        {
+            return "Debe adjuntar un archivo no vacío.";
+        }
+
+        if (archivo.Length > 5 * 1024 * 1024)
+        {
+            return "El archivo supera el tamaño máximo permitido de 5 MB.";
+        }
+
+        var contentTypeValido = archivo.ContentType.Equals("image/jpeg", StringComparison.OrdinalIgnoreCase)
+            || archivo.ContentType.Equals("image/png", StringComparison.OrdinalIgnoreCase)
+            || archivo.ContentType.Equals("image/webp", StringComparison.OrdinalIgnoreCase);
+        var extension = Path.GetExtension(Path.GetFileName(archivo.FileName));
+        var extensionValida = extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".png", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".webp", StringComparison.OrdinalIgnoreCase);
+
+        return contentTypeValido && extensionValida ? null : "El tipo de archivo no está permitido.";
     }
 
     private static ApiResponse<object> Error(string message) => new()
