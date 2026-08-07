@@ -10,23 +10,23 @@ public sealed class Gasto
 
     public int? IdMedioPago { get; set; }
 
-    public required string CodigoEstado { get; set; }
+    public required string CodEstado { get; set; }
 
     public decimal Monto { get; set; }
 
     public DateTimeOffset FechaGasto { get; set; }
 
-    public required string NombreComercio { get; set; }
+    public string? NombreComercio { get; set; }
 
-    public required string Descripcion { get; set; }
+    public string? Descripcion { get; set; }
 
-    public required string CodigoOrigen { get; set; }
+    public required string CodOrigen { get; set; }
 
-    public required string RutaComprobante { get; set; }
+    public string? RutaComprobante { get; set; }
 
-    public required string NombreComprobante { get; set; }
+    public string? NombreComprobante { get; set; }
 
     public DateTimeOffset FechaRegistro { get; set; }
 
-    public DateTimeOffset FechaActualizacion { get; set; }
+    public DateTimeOffset? FechaActualizacion { get; set; }
 }

@@ -15,6 +15,7 @@ builder.Services.AddDbContext<ControlGastosDbContext>(options =>
 });
 
 builder.Services.AddScoped<ICategoriaGastoRepository, CategoriaGastoRepository>();
+builder.Services.AddScoped<IGastoRepository, GastoRepository>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
