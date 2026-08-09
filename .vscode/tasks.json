@@ -37,6 +37,25 @@
       }
     },
     {
+      "label": "ControlGastos: Run Web",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "src/ControlGastos.Web/ControlGastos.Web.csproj"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
       "label": "ControlGastos: Clean",
       "type": "process",
       "command": "dotnet",

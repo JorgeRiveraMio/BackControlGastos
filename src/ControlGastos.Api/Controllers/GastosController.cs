@@ -1,15 +1,18 @@
 using ControlGastos.Core.DTOs;
 using ControlGastos.Core.Exceptions;
 using ControlGastos.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ControlGastos.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/gastos")]
 public sealed class GastosController(
     IGastoRepository gastoRepository,
-    IGastoComprobanteService gastoComprobanteService) : ControllerBase
+    IGastoComprobanteService gastoComprobanteService,
+    IUsuarioActualService usuarioActualService) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<Gasto_Registrado_DTO>), StatusCodes.Status201Created)]
@@ -26,7 +29,8 @@ public sealed class GastosController(
 
         try
         {
-            var idGasto = await gastoRepository.RegistrarAsync(dto, cancellationToken);
+            var idUsuario = usuarioActualService.ObtenerIdUsuario();
+            var idGasto = await gastoRepository.RegistrarAsync(idUsuario, dto, cancellationToken);
             var respuesta = new ApiResponse<Gasto_Registrado_DTO>
             {
                 IsOk = true,
@@ -36,7 +40,7 @@ public sealed class GastosController(
 
             return CreatedAtRoute(
                 "ObtenerGastoPorId",
-                new { id = idGasto, idUsuario = dto.IdUsuario },
+                new { id = idGasto },
                 respuesta);
         }
         catch (GastoValidationException exception)
@@ -47,17 +51,17 @@ public sealed class GastosController(
 
     [HttpGet]
     public async Task<ActionResult<ApiResponse<IReadOnlyList<Gasto_Listar_DTO>>>> ObtenerPorMesAsync(
-        Guid idUsuario,
         int anio,
         int mes,
         CancellationToken cancellationToken)
     {
-        var error = ValidarConsultaMensual(idUsuario, anio, mes);
+        var error = ValidarConsultaMensual(anio, mes);
         if (error is not null)
         {
             return BadRequest(Error(error));
         }
 
+        var idUsuario = usuarioActualService.ObtenerIdUsuario();
         var gastos = await gastoRepository.ObtenerPorMesAsync(idUsuario, anio, mes, cancellationToken);
         return Ok(new ApiResponse<IReadOnlyList<Gasto_Listar_DTO>>
         {
@@ -70,14 +74,14 @@ public sealed class GastosController(
     [HttpGet("{id:long}", Name = "ObtenerGastoPorId")]
     public async Task<ActionResult<ApiResponse<Gasto_Listar_DTO>>> ObtenerPorIdAsync(
         long id,
-        Guid idUsuario,
         CancellationToken cancellationToken)
     {
-        if (id <= 0 || idUsuario == Guid.Empty)
+        if (id <= 0)
         {
-            return BadRequest(Error("El id del gasto y el id del usuario son obligatorios."));
+            return BadRequest(Error("El id del gasto es obligatorio."));
         }
 
+        var idUsuario = usuarioActualService.ObtenerIdUsuario();
         var gasto = await gastoRepository.ObtenerPorIdAsync(id, idUsuario, cancellationToken);
         if (gasto is null)
         {
@@ -95,13 +99,12 @@ public sealed class GastosController(
     [HttpPut("{id:long}")]
     public async Task<ActionResult<ApiResponse<object>>> ActualizarAsync(
         long id,
-        Guid idUsuario,
         Gasto_Actualizar_DTO dto,
         CancellationToken cancellationToken)
     {
-        if (id <= 0 || idUsuario == Guid.Empty)
+        if (id <= 0)
         {
-            return BadRequest(Error("El id del gasto y el id del usuario son obligatorios."));
+            return BadRequest(Error("El id del gasto es obligatorio."));
         }
 
         var error = ValidarActualizacion(dto);
@@ -112,6 +115,7 @@ public sealed class GastosController(
 
         try
         {
+            var idUsuario = usuarioActualService.ObtenerIdUsuario();
             var actualizado = await gastoRepository.ActualizarAsync(id, idUsuario, dto, cancellationToken);
             if (!actualizado)
             {
@@ -133,14 +137,14 @@ public sealed class GastosController(
     [HttpDelete("{id:long}")]
     public async Task<ActionResult<ApiResponse<object>>> AnularAsync(
         long id,
-        Guid idUsuario,
         CancellationToken cancellationToken)
     {
-        if (id <= 0 || idUsuario == Guid.Empty)
+        if (id <= 0)
         {
-            return BadRequest(Error("El id del gasto y el id del usuario son obligatorios."));
+            return BadRequest(Error("El id del gasto es obligatorio."));
         }
 
+        var idUsuario = usuarioActualService.ObtenerIdUsuario();
         var anulado = await gastoRepository.AnularAsync(id, idUsuario, cancellationToken);
         if (!anulado)
         {
@@ -157,15 +161,15 @@ public sealed class GastosController(
     [HttpPost("{idGasto:long}/comprobante")]
     public async Task<ActionResult<ApiResponse<ComprobanteCargado_DTO>>> SubirComprobanteAsync(
         long idGasto,
-        Guid idUsuario,
         [FromForm] IFormFile? archivo,
         CancellationToken cancellationToken)
     {
-        if (idGasto <= 0 || idUsuario == Guid.Empty)
+        if (idGasto <= 0)
         {
-            return BadRequest(Error("El id del gasto y el id del usuario son obligatorios."));
+            return BadRequest(Error("El id del gasto es obligatorio."));
         }
 
+        var idUsuario = usuarioActualService.ObtenerIdUsuario();
         var gasto = await gastoRepository.ObtenerComprobanteAsync(idGasto, idUsuario, cancellationToken);
         if (gasto is null)
         {
@@ -210,16 +214,16 @@ public sealed class GastosController(
     [HttpGet("{idGasto:long}/comprobante")]
     public async Task<ActionResult<ApiResponse<ComprobanteUrl_DTO>>> ObtenerComprobanteAsync(
         long idGasto,
-        Guid idUsuario,
         CancellationToken cancellationToken)
     {
-        if (idGasto <= 0 || idUsuario == Guid.Empty)
+        if (idGasto <= 0)
         {
-            return BadRequest(Error("El id del gasto y el id del usuario son obligatorios."));
+            return BadRequest(Error("El id del gasto es obligatorio."));
         }
 
         try
         {
+            var idUsuario = usuarioActualService.ObtenerIdUsuario();
             var comprobante = await gastoComprobanteService.ObtenerUrlAsync(idUsuario, idGasto, cancellationToken);
             if (comprobante is null)
             {
@@ -242,16 +246,16 @@ public sealed class GastosController(
     [HttpDelete("{idGasto:long}/comprobante")]
     public async Task<ActionResult<ApiResponse<object>>> EliminarComprobanteAsync(
         long idGasto,
-        Guid idUsuario,
         CancellationToken cancellationToken)
     {
-        if (idGasto <= 0 || idUsuario == Guid.Empty)
+        if (idGasto <= 0)
         {
-            return BadRequest(Error("El id del gasto y el id del usuario son obligatorios."));
+            return BadRequest(Error("El id del gasto es obligatorio."));
         }
 
         try
         {
+            var idUsuario = usuarioActualService.ObtenerIdUsuario();
             var eliminado = await gastoComprobanteService.EliminarAsync(idUsuario, idGasto, cancellationToken);
             if (!eliminado)
             {
@@ -272,11 +276,6 @@ public sealed class GastosController(
 
     private static string? ValidarRegistro(Gasto_Registrar_DTO dto)
     {
-        if (dto.IdUsuario == Guid.Empty)
-        {
-            return "El id del usuario es obligatorio.";
-        }
-
         return ValidarDatosGasto(dto.IdCategoriaGasto, dto.Monto, dto.FechaGasto, dto.NombreComercio, dto.Descripcion);
     }
 
@@ -315,13 +314,8 @@ public sealed class GastosController(
             : null;
     }
 
-    private static string? ValidarConsultaMensual(Guid idUsuario, int anio, int mes)
+    private static string? ValidarConsultaMensual(int anio, int mes)
     {
-        if (idUsuario == Guid.Empty)
-        {
-            return "El id del usuario es obligatorio.";
-        }
-
         if (anio is < 2000 or > 2100)
         {
             return "El año debe estar entre 2000 y 2100.";

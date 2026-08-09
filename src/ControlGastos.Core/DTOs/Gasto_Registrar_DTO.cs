@@ -2,8 +2,6 @@ namespace ControlGastos.Core.DTOs;
 
 public sealed class Gasto_Registrar_DTO
 {
-    public Guid IdUsuario { get; init; }
-
     public int IdCategoriaGasto { get; init; }
 
     public int? IdMedioPago { get; init; }

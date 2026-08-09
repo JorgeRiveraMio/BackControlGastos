@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Control de Gastos</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="bg-light">
+    @if (Context.Session.GetString(ControlGastos.Web.Models.SessionKeys.AccessToken) is not null)
+    {
+        <header>
+            <nav class="navbar navbar-expand-sm navbar-dark bg-primary shadow-sm">
+                <div class="container">
+                    <a class="navbar-brand" asp-controller="Home" asp-action="Index">Control de Gastos</a>
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        <button type="submit" class="btn btn-outline-light btn-sm">Cerrar sesión</button>
+                    </form>
+                </div>
+            </nav>
+        </header>
+    }
+    <main class="container">
+        @RenderBody()
+    </main>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

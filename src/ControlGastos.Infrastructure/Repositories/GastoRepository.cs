@@ -11,13 +11,16 @@ public sealed class GastoRepository(ControlGastosDbContext dbContext) : IGastoRe
 {
     private static readonly TimeZoneInfo ZonaHorariaLima = ObtenerZonaHorariaLima();
 
-    public async Task<long> RegistrarAsync(Gasto_Registrar_DTO dto, CancellationToken cancellationToken)
+    public async Task<long> RegistrarAsync(
+        Guid idUsuario,
+        Gasto_Registrar_DTO dto,
+        CancellationToken cancellationToken)
     {
         await ValidarCategoriaYMedioPagoAsync(dto.IdCategoriaGasto, dto.IdMedioPago, cancellationToken);
 
         var gasto = new Gasto
         {
-            IdUsuario = dto.IdUsuario,
+            IdUsuario = idUsuario,
             IdCategoriaGasto = dto.IdCategoriaGasto,
             IdMedioPago = dto.IdMedioPago,
             CodEstado = "CONFIRMADO",

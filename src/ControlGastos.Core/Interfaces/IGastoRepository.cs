@@ -4,7 +4,7 @@ namespace ControlGastos.Core.Interfaces;
 
 public interface IGastoRepository
 {
-    Task<long> RegistrarAsync(Gasto_Registrar_DTO dto, CancellationToken cancellationToken);
+    Task<long> RegistrarAsync(Guid idUsuario, Gasto_Registrar_DTO dto, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Gasto_Listar_DTO>> ObtenerPorMesAsync(
         Guid idUsuario,

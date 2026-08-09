@@ -1,10 +1,12 @@
 using ControlGastos.Core.DTOs;
 using ControlGastos.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ControlGastos.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/categorias")]
 public sealed class CategoriasController(ICategoriaGastoRepository categoriaGastoRepository) : ControllerBase
 {

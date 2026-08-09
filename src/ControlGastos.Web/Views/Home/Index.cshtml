@@ -1,0 +1,28 @@
+@model ControlGastos.Web.Models.ViewModels.HomeIndexViewModel
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<section class="py-4">
+    <h1 class="h3">Control de Gastos</h1>
+    <p class="text-secondary">Bienvenido. Tu sesión con Supabase está activa.</p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="h5 card-title">Categorías disponibles</h2>
+            @if (Model.Categorias.Count == 0)
+            {
+                <p class="text-secondary mb-0">No hay categorías disponibles o no fue posible consultarlas.</p>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var categoria in Model.Categorias)
+                    {
+                        <li class="list-group-item px-0">@categoria.Nombre</li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</section>
