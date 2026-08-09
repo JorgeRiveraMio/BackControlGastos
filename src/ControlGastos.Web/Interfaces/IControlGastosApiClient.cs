@@ -43,4 +43,7 @@ public interface IControlGastosApiClient
     Task<ApiClientResult<IReadOnlyList<AlertaViewModel>>> ObtenerAlertasAsync(string accessToken, CancellationToken cancellationToken);
     Task<ApiClientResult<int>> ObtenerCantidadAlertasNoLeidasAsync(string accessToken, CancellationToken cancellationToken);
     Task<ApiClientResult<object>> MarcarAlertaLeidaAsync(string accessToken, long idAlerta, CancellationToken cancellationToken);
+    Task<ApiClientResult<TelegramEstadoViewModel>> ObtenerEstadoTelegramAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiClientResult<TelegramVinculacionViewModel>> GenerarVinculacionTelegramAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiClientResult<object>> DesvincularTelegramAsync(string accessToken, CancellationToken cancellationToken);
 }

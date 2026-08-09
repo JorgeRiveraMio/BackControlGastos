@@ -13,7 +13,13 @@ public sealed class PerfilFinancieroViewModel
     public decimal? PresupuestoMensual { get; init; }
     [Range(typeof(decimal), "0.01", "100", ErrorMessage = "El porcentaje debe estar entre 0 y 100.")]
     public decimal PorcentajeAlerta { get; init; } = 80;
+    public bool TelegramVinculado { get; init; }
+    public string? TelegramUsername { get; init; }
+    public string? TelegramEnlace { get; init; }
 }
+
+public sealed class TelegramEstadoViewModel { public bool Vinculado { get; init; } public string? Username { get; init; } }
+public sealed class TelegramVinculacionViewModel { public string BotUsername { get; init; } = string.Empty; public string Token { get; init; } = string.Empty; public int ExpiraEnSegundos { get; init; } }
 
 public sealed class PerfilFinancieroApiModel
 {

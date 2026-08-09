@@ -10,4 +10,7 @@
 <div class="col-md-6"><label asp-for="PresupuestoMensual" class="form-label">Presupuesto mensual (PEN)</label><input asp-for="PresupuestoMensual" type="number" min="0" step="0.01" class="form-control" /></div></div>
 <div class="mt-3"><label asp-for="PorcentajeAlerta" class="form-label">Alertarme al llegar a (%)</label><input asp-for="PorcentajeAlerta" type="number" min="0.01" max="100" step="0.01" class="form-control" /><span asp-validation-for="PorcentajeAlerta" class="text-danger"></span></div>
 <button class="btn btn-primary mt-4" type="submit">Guardar</button></form>
+<hr class="my-4" /><h2 class="h5">Telegram</h2>
+@if (Model.TelegramVinculado) { <p class="text-success mb-2">Telegram vinculado @if (!string.IsNullOrWhiteSpace(Model.TelegramUsername)) { <span>(@Model.TelegramUsername)</span> }</p><form asp-action="DesvincularTelegram" method="post">@Html.AntiForgeryToken()<button class="btn btn-outline-danger" type="submit">Desvincular Telegram</button></form> }
+else { <p class="text-muted">Telegram no está vinculado.</p><form asp-action="GenerarVinculacionTelegram" method="post">@Html.AntiForgeryToken()<button class="btn btn-outline-primary" type="submit">Vincular Telegram</button></form>@if (!string.IsNullOrWhiteSpace(Model.TelegramEnlace)) { <a href="@Model.TelegramEnlace" class="btn btn-success mt-3" target="_blank" rel="noopener">Abrir Telegram</a><p class="form-text">El enlace vence en 10 minutos.</p> } }
 </div></div></div></div>

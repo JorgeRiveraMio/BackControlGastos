@@ -1,0 +1,6 @@
+using ControlGastos.Core.Entities; using ControlGastos.Core.Interfaces; using ControlGastos.Infrastructure.Data; using Microsoft.EntityFrameworkCore;
+namespace ControlGastos.Infrastructure.Repositories;
+public sealed class UsuarioTelegramRepository(ControlGastosDbContext db) : IUsuarioTelegramRepository {
+ public Task<UsuarioTelegram?> ObtenerAsync(Guid id, CancellationToken ct) => db.UsuariosTelegram.AsNoTracking().SingleOrDefaultAsync(x=>x.IdUsuario==id && x.EstaVinculado,ct);
+ public async Task VincularAsync(Guid id,long telegramId,long chatId,string? username,CancellationToken ct){var x=await db.UsuariosTelegram.SingleOrDefaultAsync(x=>x.IdUsuario==id,ct);if(x is null) db.UsuariosTelegram.Add(new UsuarioTelegram{IdUsuario=id,IdTelegram=telegramId,IdChatTelegram=chatId,NombreUsuarioTelegram=username,EstaVinculado=true,FechaVinculacion=DateTimeOffset.UtcNow});else{x.IdTelegram=telegramId;x.IdChatTelegram=chatId;x.NombreUsuarioTelegram=username;x.EstaVinculado=true;x.FechaActualizacion=DateTimeOffset.UtcNow;}await db.SaveChangesAsync(ct);}
+ public async Task DesvincularAsync(Guid id,CancellationToken ct){var x=await db.UsuariosTelegram.SingleOrDefaultAsync(x=>x.IdUsuario==id,ct);if(x is null)return;x.EstaVinculado=false;x.FechaActualizacion=DateTimeOffset.UtcNow;await db.SaveChangesAsync(ct);}}

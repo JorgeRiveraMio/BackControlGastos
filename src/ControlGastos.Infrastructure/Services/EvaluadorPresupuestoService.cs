@@ -10,7 +10,8 @@ namespace ControlGastos.Infrastructure.Services;
 public sealed class EvaluadorPresupuestoService(
     ControlGastosDbContext dbContext,
     IPerfilRepository perfilRepository,
-    IAlertaRepository alertaRepository) : IEvaluadorPresupuestoService
+    IAlertaRepository alertaRepository,
+    ITelegramNotificadorService telegramNotificadorService) : IEvaluadorPresupuestoService
 {
     public async Task EvaluarAsync(Guid idUsuario, DateTimeOffset fechaGasto, CancellationToken cancellationToken)
     {
@@ -35,7 +36,9 @@ public sealed class EvaluadorPresupuestoService(
 
         try
         {
-            await alertaRepository.CrearAsync(new Alerta { IdUsuario = idUsuario, CodigoTipoAlerta = tipo, DescripcionAlerta = mensaje, PorcentajeUmbral = perfil.PorcentajeAlerta, MontoPresupuesto = perfil.PresupuestoMensual, MontoGastado = total, AnioPeriodo = anio, MesPeriodo = mes, EstadoLeida = false, FechaRegistro = DateTimeOffset.UtcNow }, cancellationToken);
+            var alerta = new Alerta { IdUsuario = idUsuario, CodigoTipoAlerta = tipo, DescripcionAlerta = mensaje, PorcentajeUmbral = perfil.PorcentajeAlerta, MontoPresupuesto = perfil.PresupuestoMensual, MontoGastado = total, AnioPeriodo = anio, MesPeriodo = mes, EstadoLeida = false, FechaRegistro = DateTimeOffset.UtcNow };
+            if (await alertaRepository.CrearAsync(alerta, cancellationToken))
+                await telegramNotificadorService.NotificarAlertaAsync(idUsuario, alerta, cancellationToken);
         }
         catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         {

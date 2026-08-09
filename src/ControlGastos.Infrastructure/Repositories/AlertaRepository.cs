@@ -11,10 +11,11 @@ public sealed class AlertaRepository(ControlGastosDbContext dbContext) : IAlerta
     public Task<bool> ExisteAsync(Guid idUsuario, string codigoTipo, int anio, int mes, CancellationToken cancellationToken) =>
         dbContext.Alertas.AsNoTracking().AnyAsync(x => x.IdUsuario == idUsuario && x.CodigoTipoAlerta == codigoTipo && x.AnioPeriodo == anio && x.MesPeriodo == mes, cancellationToken);
 
-    public async Task CrearAsync(Alerta alerta, CancellationToken cancellationToken)
+    public async Task<bool> CrearAsync(Alerta alerta, CancellationToken cancellationToken)
     {
         dbContext.Alertas.Add(alerta);
         await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
     public async Task<IReadOnlyList<Alerta_Listar_DTO>> ListarAsync(Guid idUsuario, CancellationToken cancellationToken) =>

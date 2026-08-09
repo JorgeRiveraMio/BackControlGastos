@@ -14,6 +14,7 @@ public sealed class PerfilController(IControlGastosApiClient apiClient) : Contro
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
         var resultado = await apiClient.ObtenerPerfilAsync(Token(), cancellationToken);
+        var telegram = await apiClient.ObtenerEstadoTelegramAsync(Token(), cancellationToken);
         if (SesionExpirada(resultado)) return Login();
         if (!resultado.IsSuccess && resultado.Data is null)
         {
@@ -27,8 +28,27 @@ public sealed class PerfilController(IControlGastosApiClient apiClient) : Contro
             IngresoMensual = perfil?.IngresoMensual,
             PresupuestoMensual = perfil?.PresupuestoMensual,
             PorcentajeAlerta = perfil?.PorcentajeAlerta ?? 80
+            ,TelegramVinculado = telegram.Data?.Vinculado == true, TelegramUsername = telegram.Data?.Username,
+            TelegramEnlace = TempData["TelegramEnlace"] as string
         });
     }
+
+    [HttpPost("Perfil/Telegram/Vinculacion")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GenerarVinculacionTelegram(CancellationToken cancellationToken)
+    {
+        var resultado = await apiClient.GenerarVinculacionTelegramAsync(Token(), cancellationToken);
+        if (SesionExpirada(resultado)) return Login();
+        if (!resultado.IsSuccess || resultado.Data is null) { TempData["Error"] = resultado.ErrorMessage ?? "No fue posible generar el enlace."; return RedirectToAction(nameof(Index)); }
+        TempData["TelegramEnlace"] = $"https://t.me/{resultado.Data.BotUsername}?start={resultado.Data.Token}";
+        TempData["Success"] = "Abre Telegram para completar la vinculación. El enlace vence en 10 minutos.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost("Perfil/Telegram/Desvincular")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DesvincularTelegram(CancellationToken cancellationToken)
+    { var resultado=await apiClient.DesvincularTelegramAsync(Token(),cancellationToken); if(SesionExpirada(resultado))return Login(); TempData[resultado.IsSuccess?"Success":"Error"]=resultado.IsSuccess?"Telegram desvinculado correctamente.":resultado.ErrorMessage??"No fue posible desvincular Telegram.";return RedirectToAction(nameof(Index)); }
 
     [HttpPost]
     [ValidateAntiForgeryToken]

@@ -88,6 +88,10 @@ public sealed class ControlGastosApiClient(
     public Task<ApiClientResult<object>> MarcarAlertaLeidaAsync(string accessToken, long idAlerta, CancellationToken cancellationToken) =>
         EnviarAsync<object>(CrearSolicitud(HttpMethod.Put, $"api/alertas/{idAlerta}/leida", accessToken), cancellationToken);
 
+    public Task<ApiClientResult<TelegramEstadoViewModel>> ObtenerEstadoTelegramAsync(string accessToken, CancellationToken ct) => EnviarAsync<TelegramEstadoViewModel>(CrearSolicitud(HttpMethod.Get,"api/telegram/estado",accessToken),ct);
+    public Task<ApiClientResult<TelegramVinculacionViewModel>> GenerarVinculacionTelegramAsync(string accessToken, CancellationToken ct) => EnviarAsync<TelegramVinculacionViewModel>(CrearSolicitud(HttpMethod.Post,"api/telegram/vinculacion",accessToken),ct);
+    public Task<ApiClientResult<object>> DesvincularTelegramAsync(string accessToken, CancellationToken ct) => EnviarAsync<object>(CrearSolicitud(HttpMethod.Delete,"api/telegram/vinculacion",accessToken),ct);
+
     private static HttpRequestMessage CrearSolicitud(HttpMethod metodo, string uri, string accessToken)
     {
         var solicitud = new HttpRequestMessage(metodo, uri);

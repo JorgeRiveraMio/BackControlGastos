@@ -15,6 +15,8 @@ public sealed class ControlGastosDbContext(
     public DbSet<Perfil> Perfiles => Set<Perfil>();
 
     public DbSet<Alerta> Alertas => Set<Alerta>();
+    public DbSet<UsuarioTelegram> UsuariosTelegram => Set<UsuarioTelegram>();
+    public DbSet<VinculacionTelegram> VinculacionesTelegram => Set<VinculacionTelegram>();
 
     public DbSet<Gasto> Gastos => Set<Gasto>();
 

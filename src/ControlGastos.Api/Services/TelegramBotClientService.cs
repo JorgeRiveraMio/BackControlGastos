@@ -1,0 +1,3 @@
+using System.Net.Http.Json; using ControlGastos.Core.Interfaces; using Microsoft.Extensions.Options;
+namespace ControlGastos.Api.Services;
+public sealed class TelegramBotClientService(HttpClient client,IOptions<TelegramOptions> options) : ITelegramBotClientService { public async Task EnviarMensajeAsync(long chatId,string mensaje,CancellationToken ct){var token=options.Value.BotToken;if(string.IsNullOrWhiteSpace(token))return;using var request=new HttpRequestMessage(HttpMethod.Post,$"bot{token}/sendMessage"){Content=JsonContent.Create(new{chat_id=chatId,text=mensaje})};using var response=await client.SendAsync(request,ct);response.EnsureSuccessStatusCode();}}
