@@ -1,0 +1,15 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY src/ControlGastos.Web/ControlGastos.Web.csproj src/ControlGastos.Web/
+RUN dotnet restore src/ControlGastos.Web/ControlGastos.Web.csproj
+
+COPY src/ src/
+RUN dotnet publish src/ControlGastos.Web/ControlGastos.Web.csproj -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+COPY docker/entrypoint-web.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
