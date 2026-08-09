@@ -1,0 +1,13 @@
+@model ControlGastos.Web.Models.ViewModels.GastoFormViewModel<ControlGastos.Web.Models.ViewModels.GastoEditViewModel>
+@{
+    ViewData["Title"] = "Editar gasto";
+}
+<div class="row justify-content-center"><div class="col-lg-8">
+    <div class="card shadow-sm"><div class="card-body p-4">
+        <h1 class="h3 mb-4">Editar gasto</h1>
+        <form asp-action="Edit" asp-route-id="@Model.Gasto.IdGasto" method="post">
+            <input asp-for="Gasto.IdGasto" type="hidden" />
+            <partial name="_Formulario" model="Model" />
+        </form>
+    </div></div>
+</div></div>

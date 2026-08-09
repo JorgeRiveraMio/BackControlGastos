@@ -13,15 +13,21 @@
         <header>
             <nav class="navbar navbar-expand-sm navbar-dark bg-primary shadow-sm">
                 <div class="container">
-                    <a class="navbar-brand" asp-controller="Home" asp-action="Index">Control de Gastos</a>
-                    <form asp-controller="Account" asp-action="Logout" method="post">
-                        <button type="submit" class="btn btn-outline-light btn-sm">Cerrar sesión</button>
-                    </form>
+                    <a class="navbar-brand" asp-controller="Dashboard" asp-action="Index">Control de Gastos</a>
+                    <div class="d-flex align-items-center gap-2">
+                        <a class="nav-link text-white" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                        <a class="nav-link text-white" asp-controller="Gastos" asp-action="Index">Gastos</a>
+                        <a class="nav-link text-white" asp-controller="Perfil" asp-action="Index">Perfil</a>
+                        <form asp-controller="Account" asp-action="Logout" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-light btn-sm">Cerrar sesión</button>
+                        </form>
+                    </div>
                 </div>
             </nav>
         </header>
     }
-    <main class="container">
+    <main class="container py-4">
         @RenderBody()
     </main>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

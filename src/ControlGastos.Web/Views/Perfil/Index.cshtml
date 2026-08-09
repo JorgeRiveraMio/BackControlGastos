@@ -1,0 +1,13 @@
+@model ControlGastos.Web.Models.ViewModels.PerfilFinancieroViewModel
+@{ ViewData["Title"] = "Perfil financiero"; }
+<div class="row justify-content-center"><div class="col-lg-7"><div class="card shadow-sm"><div class="card-body p-4">
+<h1 class="h3 mb-4">Perfil financiero</h1>
+@if (TempData["Success"] is string success) { <div class="alert alert-success">@success</div> }
+@if (TempData["Error"] is string error) { <div class="alert alert-danger">@error</div> }
+<form method="post"><div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<div class="mb-3"><label asp-for="NombreUsuario" class="form-label">Nombre</label><input asp-for="NombreUsuario" class="form-control" /><span asp-validation-for="NombreUsuario" class="text-danger"></span></div>
+<div class="row g-3"><div class="col-md-6"><label asp-for="IngresoMensual" class="form-label">Ingreso mensual (PEN)</label><input asp-for="IngresoMensual" type="number" min="0" step="0.01" class="form-control" /></div>
+<div class="col-md-6"><label asp-for="PresupuestoMensual" class="form-label">Presupuesto mensual (PEN)</label><input asp-for="PresupuestoMensual" type="number" min="0" step="0.01" class="form-control" /></div></div>
+<div class="mt-3"><label asp-for="PorcentajeAlerta" class="form-label">Alertarme al llegar a (%)</label><input asp-for="PorcentajeAlerta" type="number" min="0.01" max="100" step="0.01" class="form-control" /><span asp-validation-for="PorcentajeAlerta" class="text-danger"></span></div>
+<button class="btn btn-primary mt-4" type="submit">Guardar</button></form>
+</div></div></div></div>

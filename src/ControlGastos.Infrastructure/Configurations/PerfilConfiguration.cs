@@ -15,11 +15,11 @@ public sealed class PerfilConfiguration : IEntityTypeConfiguration<Perfil>
         builder.Property(perfil => perfil.NombreUsuario).HasColumnName("nom_usuario").HasMaxLength(120).IsRequired();
         builder.Property(perfil => perfil.CodigoMoneda).HasColumnName("cod_moneda").HasMaxLength(3).IsRequired();
         builder.Property(perfil => perfil.ZonaHoraria).HasColumnName("zon_horaria").HasMaxLength(50).IsRequired();
-        builder.Property(perfil => perfil.IngresoMensual).HasColumnName("mon_ingreso_mensual").HasPrecision(12, 2).IsRequired();
-        builder.Property(perfil => perfil.PresupuestoMensual).HasColumnName("mon_presupuesto_mensual").HasPrecision(12, 2).IsRequired();
+        builder.Property(perfil => perfil.IngresoMensual).HasColumnName("mon_ingreso_mensual").HasPrecision(12, 2);
+        builder.Property(perfil => perfil.PresupuestoMensual).HasColumnName("mon_presupuesto_mensual").HasPrecision(12, 2);
         builder.Property(perfil => perfil.PorcentajeAlerta).HasColumnName("por_alerta").HasPrecision(5, 2).IsRequired();
-        builder.Property(perfil => perfil.EstaActivo).HasColumnName("est_perfil").IsRequired();
+        builder.Property(perfil => perfil.EstadoPerfil).HasColumnName("est_perfil").IsRequired();
         builder.Property(perfil => perfil.FechaRegistro).HasColumnName("fec_regis").IsRequired();
-        builder.Property(perfil => perfil.FechaActualizacion).HasColumnName("fec_actualizacion").IsRequired();
+        builder.Property(perfil => perfil.FechaActualizacion).HasColumnName("fec_actualizacion");
     }
 }

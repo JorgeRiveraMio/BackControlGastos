@@ -9,8 +9,6 @@ namespace ControlGastos.Infrastructure.Repositories;
 
 public sealed class GastoRepository(ControlGastosDbContext dbContext) : IGastoRepository
 {
-    private static readonly TimeZoneInfo ZonaHorariaLima = ObtenerZonaHorariaLima();
-
     public async Task<long> RegistrarAsync(
         Guid idUsuario,
         Gasto_Registrar_DTO dto,
@@ -44,9 +42,7 @@ public sealed class GastoRepository(ControlGastosDbContext dbContext) : IGastoRe
         int mes,
         CancellationToken cancellationToken)
     {
-        var inicioMesLima = new DateTime(anio, mes, 1, 0, 0, 0, DateTimeKind.Unspecified);
-        var fechaInicioUtc = ConvertirHoraLimaAUtc(inicioMesLima);
-        var fechaFinUtc = ConvertirHoraLimaAUtc(inicioMesLima.AddMonths(1));
+        var (fechaInicioUtc, fechaFinUtc) = FechaLima.ObtenerLimitesMensualesUtc(anio, mes);
 
         return await CrearConsultaListado()
             .Where(gasto => gasto.IdUsuario == idUsuario
@@ -186,7 +182,8 @@ public sealed class GastoRepository(ControlGastosDbContext dbContext) : IGastoRe
                    NombreComercio = gasto.NombreComercio,
                    Descripcion = gasto.Descripcion,
                    CodEstado = gasto.CodEstado,
-                   CodOrigen = gasto.CodOrigen
+                   CodOrigen = gasto.CodOrigen,
+                   TieneComprobante = !string.IsNullOrWhiteSpace(gasto.RutaComprobante)
                };
     }
 
@@ -227,22 +224,4 @@ public sealed class GastoRepository(ControlGastosDbContext dbContext) : IGastoRe
         }
     }
 
-    private static DateTimeOffset ConvertirHoraLimaAUtc(DateTime fechaHoraLima)
-    {
-        var fechaHoraUtc = TimeZoneInfo.ConvertTimeToUtc(fechaHoraLima, ZonaHorariaLima);
-
-        return new DateTimeOffset(fechaHoraUtc);
-    }
-
-    private static TimeZoneInfo ObtenerZonaHorariaLima()
-    {
-        try
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById("America/Lima");
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById("SA Pacific Standard Time");
-        }
-    }
 }

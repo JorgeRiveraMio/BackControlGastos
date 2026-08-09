@@ -103,7 +103,10 @@ builder.Services.AddDbContext<ControlGastosDbContext>(options =>
 });
 
 builder.Services.AddScoped<ICategoriaGastoRepository, CategoriaGastoRepository>();
+builder.Services.AddScoped<IMedioPagoRepository, MedioPagoRepository>();
 builder.Services.AddScoped<IGastoRepository, GastoRepository>();
+builder.Services.AddScoped<IPerfilRepository, PerfilRepository>();
+builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 builder.Services.Configure<SupabaseOptions>(builder.Configuration.GetSection(SupabaseOptions.SectionName));
 builder.Services.AddHttpClient<IComprobanteStorageService, SupabaseComprobanteStorageService>();
 builder.Services.AddScoped<IGastoComprobanteService, GastoComprobanteService>();

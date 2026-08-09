@@ -28,7 +28,7 @@ public sealed class AccountController(ISupabaseAuthService supabaseAuthService) 
         }
 
         GuardarSesion(resultado);
-        return LocalRedirect(Url.IsLocalUrl(model.ReturnUrl) ? model.ReturnUrl : Url.Action("Index", "Home")!);
+        return LocalRedirect(Url.IsLocalUrl(model.ReturnUrl) ? model.ReturnUrl : Url.Action("Index", "Dashboard")!);
     }
 
     [HttpGet]
@@ -57,7 +57,7 @@ public sealed class AccountController(ISupabaseAuthService supabaseAuthService) 
         }
 
         GuardarSesion(resultado);
-        return RedirectToAction("Index", "Home");
+        return RedirectToAction("Index", "Dashboard");
     }
 
     [HttpPost]

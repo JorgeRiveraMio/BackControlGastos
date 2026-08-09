@@ -10,15 +10,15 @@ public sealed class Perfil
 
     public required string ZonaHoraria { get; set; }
 
-    public decimal IngresoMensual { get; set; }
+    public decimal? IngresoMensual { get; set; }
 
-    public decimal PresupuestoMensual { get; set; }
+    public decimal? PresupuestoMensual { get; set; }
 
     public decimal PorcentajeAlerta { get; set; }
 
-    public bool EstaActivo { get; set; }
+    public bool EstadoPerfil { get; set; }
 
     public DateTimeOffset FechaRegistro { get; set; }
 
-    public DateTimeOffset FechaActualizacion { get; set; }
+    public DateTimeOffset? FechaActualizacion { get; set; }
 }

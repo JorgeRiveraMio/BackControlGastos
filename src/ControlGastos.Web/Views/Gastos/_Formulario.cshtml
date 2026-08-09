@@ -1,0 +1,54 @@
+@model ControlGastos.Web.Models.ViewModels.IGastoFormViewModel
+<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<div class="row g-3">
+    <div class="col-md-6">
+        <label for="monto" class="form-label">Monto</label>
+        <input id="monto" name="Gasto.Monto" value="@Model.GastoFormulario.Monto.ToString(System.Globalization.CultureInfo.InvariantCulture)" type="number" min="0.01" step="0.01" class="form-control" required />
+        <span class="text-danger field-validation-valid" data-valmsg-for="Gasto.Monto" data-valmsg-replace="true"></span>
+    </div>
+    <div class="col-md-6">
+        <label for="fechaGasto" class="form-label">Fecha y hora</label>
+        <input id="fechaGasto" name="Gasto.FechaGasto" value='@Model.GastoFormulario.FechaGasto.ToString("yyyy-MM-ddTHH:mm")' type="datetime-local" class="form-control" required />
+        <span class="text-danger field-validation-valid" data-valmsg-for="Gasto.FechaGasto" data-valmsg-replace="true"></span>
+    </div>
+    <div class="col-md-6">
+        <label for="categoria" class="form-label">Categoría</label>
+        <select id="categoria" name="Gasto.IdCategoriaGasto" class="form-select" required>
+            <option value="">Seleccione una categoría</option>
+            @foreach (var categoria in Model.Categorias)
+            {
+                <option value="@categoria.IdCategoriaGasto" selected="@(categoria.IdCategoriaGasto == Model.GastoFormulario.IdCategoriaGasto)">@categoria.Nombre</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label for="medioPago" class="form-label">Medio de pago</label>
+        <select id="medioPago" name="Gasto.IdMedioPago" class="form-select">
+            <option value="">Sin especificar</option>
+            @foreach (var medio in Model.MediosPago)
+            {
+                <option value="@medio.IdMedioPago" selected="@(medio.IdMedioPago == Model.GastoFormulario.IdMedioPago)">@medio.Nombre</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label for="comercio" class="form-label">Comercio</label>
+        <input id="comercio" name="Gasto.NombreComercio" value="@Model.GastoFormulario.NombreComercio" maxlength="150" class="form-control" />
+    </div>
+    <div class="col-12">
+        <label for="descripcion" class="form-label">Descripción</label>
+        <textarea id="descripcion" name="Gasto.Descripcion" maxlength="300" rows="3" class="form-control">@Model.GastoFormulario.Descripcion</textarea>
+    </div>
+    @if (ViewContext.RouteData.Values["action"]?.ToString() == "Create")
+    {
+        <div class="col-12">
+            <label for="comprobante" class="form-label">Comprobante</label>
+            <input id="comprobante" name="Gasto.Comprobante" type="file" accept="image/jpeg,image/png,image/webp" class="form-control" />
+            <div class="form-text">Opcional. JPG, PNG o WEBP. Máximo 5 MB.</div>
+        </div>
+    }
+</div>
+<div class="d-flex gap-2 mt-4">
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+</div>
