@@ -40,4 +40,7 @@ public interface IControlGastosApiClient
     Task<ApiClientResult<PerfilFinancieroApiModel>> ObtenerPerfilAsync(string accessToken, CancellationToken cancellationToken);
     Task<ApiClientResult<object>> GuardarPerfilAsync(string accessToken, PerfilFinancieroActualizarApiModel perfil, CancellationToken cancellationToken);
     Task<ApiClientResult<DashboardResumenApiModel>> ObtenerDashboardAsync(string accessToken, int anio, int mes, CancellationToken cancellationToken);
+    Task<ApiClientResult<IReadOnlyList<AlertaViewModel>>> ObtenerAlertasAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiClientResult<int>> ObtenerCantidadAlertasNoLeidasAsync(string accessToken, CancellationToken cancellationToken);
+    Task<ApiClientResult<object>> MarcarAlertaLeidaAsync(string accessToken, long idAlerta, CancellationToken cancellationToken);
 }

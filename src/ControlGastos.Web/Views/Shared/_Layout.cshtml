@@ -18,6 +18,7 @@
                         <a class="nav-link text-white" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
                         <a class="nav-link text-white" asp-controller="Gastos" asp-action="Index">Gastos</a>
                         <a class="nav-link text-white" asp-controller="Perfil" asp-action="Index">Perfil</a>
+                        @await Component.InvokeAsync("AlertasNavbar")
                         <form asp-controller="Account" asp-action="Logout" method="post">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-outline-light btn-sm">Cerrar sesión</button>

@@ -12,7 +12,9 @@ namespace ControlGastos.Api.Controllers;
 public sealed class GastosController(
     IGastoRepository gastoRepository,
     IGastoComprobanteService gastoComprobanteService,
-    IUsuarioActualService usuarioActualService) : ControllerBase
+    IUsuarioActualService usuarioActualService,
+    IEvaluadorPresupuestoService evaluadorPresupuestoService,
+    ILogger<GastosController> logger) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<Gasto_Registrado_DTO>), StatusCodes.Status201Created)]
@@ -31,6 +33,7 @@ public sealed class GastosController(
         {
             var idUsuario = usuarioActualService.ObtenerIdUsuario();
             var idGasto = await gastoRepository.RegistrarAsync(idUsuario, dto, cancellationToken);
+            await EvaluarPresupuestoSinBloquearAsync(idUsuario, dto.FechaGasto, cancellationToken);
             var respuesta = new ApiResponse<Gasto_Registrado_DTO>
             {
                 IsOk = true,
@@ -121,6 +124,7 @@ public sealed class GastosController(
             {
                 return NotFound(Error("No se encontró el gasto solicitado."));
             }
+            await EvaluarPresupuestoSinBloquearAsync(idUsuario, dto.FechaGasto, cancellationToken);
 
             return Ok(new ApiResponse<object>
             {
@@ -353,4 +357,10 @@ public sealed class GastosController(
         IsOk = false,
         Message = message
     };
+
+    private async Task EvaluarPresupuestoSinBloquearAsync(Guid idUsuario, DateTimeOffset fechaGasto, CancellationToken cancellationToken)
+    {
+        try { await evaluadorPresupuestoService.EvaluarAsync(idUsuario, fechaGasto, cancellationToken); }
+        catch (Exception exception) { logger.LogError(exception, "No se pudo evaluar el presupuesto para el usuario {IdUsuario}.", idUsuario); }
+    }
 }

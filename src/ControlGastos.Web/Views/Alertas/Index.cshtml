@@ -1,0 +1,7 @@
+@using ControlGastos.Web.Services
+@model IReadOnlyList<ControlGastos.Web.Models.ViewModels.AlertaViewModel>
+@{ ViewData["Title"] = "Alertas"; }
+<h1 class="h3 mb-4">Alertas</h1>
+@if (TempData["Error"] is string error) { <div class="alert alert-danger">@error</div> }
+@if (!Model.Any()) { <p class="text-muted">No tienes alertas.</p> }
+<div class="list-group">@foreach (var alerta in Model) { var estilo = alerta.CodigoTipoAlerta == "PRESUPUESTO_SUPERADO" ? "list-group-item-danger" : "list-group-item-warning";<div class="list-group-item @estilo @(alerta.Leida ? "opacity-75" : "")"><div class="d-flex justify-content-between gap-3"><div><p class="mb-1">@alerta.Mensaje</p><small>@FechaLimaHelper.ConvertirDesdeUtc(alerta.FechaRegistro).ToString("dd MMM yyyy HH:mm") · @(alerta.Leida ? "Leída" : "No leída")</small></div>@if(!alerta.Leida){<form asp-action="MarcarLeida" asp-route-id="@alerta.IdAlerta" method="post">@Html.AntiForgeryToken()<button class="btn btn-sm btn-outline-dark">Marcar leída</button></form>}</div></div>}</div>

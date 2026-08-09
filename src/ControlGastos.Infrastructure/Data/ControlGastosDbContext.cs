@@ -14,6 +14,8 @@ public sealed class ControlGastosDbContext(
 
     public DbSet<Perfil> Perfiles => Set<Perfil>();
 
+    public DbSet<Alerta> Alertas => Set<Alerta>();
+
     public DbSet<Gasto> Gastos => Set<Gasto>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -79,6 +79,15 @@ public sealed class ControlGastosApiClient(
     public Task<ApiClientResult<DashboardResumenApiModel>> ObtenerDashboardAsync(string accessToken, int anio, int mes, CancellationToken cancellationToken) =>
         EnviarAsync<DashboardResumenApiModel>(CrearSolicitud(HttpMethod.Get, $"api/dashboard/resumen?anio={anio}&mes={mes}", accessToken), cancellationToken);
 
+    public Task<ApiClientResult<IReadOnlyList<AlertaViewModel>>> ObtenerAlertasAsync(string accessToken, CancellationToken cancellationToken) =>
+        EnviarAsync<IReadOnlyList<AlertaViewModel>>(CrearSolicitud(HttpMethod.Get, "api/alertas", accessToken), cancellationToken);
+
+    public Task<ApiClientResult<int>> ObtenerCantidadAlertasNoLeidasAsync(string accessToken, CancellationToken cancellationToken) =>
+        EnviarAsync<int>(CrearSolicitud(HttpMethod.Get, "api/alertas/no-leidas/count", accessToken), cancellationToken);
+
+    public Task<ApiClientResult<object>> MarcarAlertaLeidaAsync(string accessToken, long idAlerta, CancellationToken cancellationToken) =>
+        EnviarAsync<object>(CrearSolicitud(HttpMethod.Put, $"api/alertas/{idAlerta}/leida", accessToken), cancellationToken);
+
     private static HttpRequestMessage CrearSolicitud(HttpMethod metodo, string uri, string accessToken)
     {
         var solicitud = new HttpRequestMessage(metodo, uri);
