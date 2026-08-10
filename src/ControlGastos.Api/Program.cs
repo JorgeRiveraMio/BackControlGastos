@@ -11,7 +11,19 @@ using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.HttpOverrides;
-var builder = WebApplication.CreateBuilder(args);
+
+var environmentName = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
+    ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+    ?? Environments.Production;
+
+var builderArgs = string.Equals(environmentName, Environments.Production, StringComparison.OrdinalIgnoreCase)
+    ? [.. args, "--hostBuilder:reloadConfigOnChange=false"]
+    : args;
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = builderArgs
+});
 
 var connectionString =
     builder.Configuration.GetConnectionString("SupabaseDatabase")
