@@ -130,6 +130,8 @@ builder.Services.AddHttpClient<ITelegramBotClientService, TelegramBotClientServi
 builder.Services.AddSingleton<ITelegramGastoParser, TelegramGastoParser>();
 builder.Services.AddSingleton<ICategorizadorGastoTelegramService, CategorizadorGastoTelegramService>();
 builder.Services.AddScoped<ITelegramGastoService, TelegramGastoService>();
+builder.Services.AddScoped<TelegramMenuService>();
+builder.Services.AddScoped<TelegramConsultaService>();
 builder.Services.AddScoped<ITelegramNotificadorService, TelegramNotificadorService>();
 builder.Services.Configure<SupabaseOptions>(builder.Configuration.GetSection(SupabaseOptions.SectionName));
 builder.Services.AddHttpClient<IComprobanteStorageService, SupabaseComprobanteStorageService>();

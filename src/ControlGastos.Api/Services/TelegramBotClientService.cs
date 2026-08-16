@@ -25,14 +25,25 @@ public sealed class TelegramBotClientService(
                     {
                         new[]
                         {
-                            new { text = "Confirmar ✅", callback_data = $"gasto_ok:{idGastoPendiente}" },
-                            new { text = "Cancelar ❌", callback_data = $"gasto_cancel:{idGastoPendiente}" }
+                            new { text = "✅ Confirmar", callback_data = $"gasto_ok:{idGastoPendiente}" },
+                            new { text = "🏷 Cambiar categoría", callback_data = $"gasto_catmenu:{idGastoPendiente}" }
+                        },
+                        new[]
+                        {
+                            new { text = "💳 Medio de pago", callback_data = $"gasto_pagomenu:{idGastoPendiente}" },
+                            new { text = "❌ Cancelar", callback_data = $"gasto_cancel:{idGastoPendiente}" }
                         }
                     }
                 }
             },
             chatId,
             ct);
+
+    public Task EnviarMensajeConMarkupAsync(long chatId, string mensaje, object replyMarkup, CancellationToken ct) =>
+        EnviarAsync("sendMessage", new { chat_id = chatId, text = mensaje, reply_markup = replyMarkup }, chatId, ct);
+
+    public Task EditarMensajeAsync(long chatId, long messageId, string mensaje, object replyMarkup, CancellationToken ct) =>
+        EnviarAsync("editMessageText", new { chat_id = chatId, message_id = messageId, text = mensaje, reply_markup = replyMarkup }, chatId, ct);
 
     public Task ResponderCallbackAsync(string callbackQueryId, CancellationToken ct) =>
         EnviarAsync("answerCallbackQuery", new { callback_query_id = callbackQueryId }, null, ct);

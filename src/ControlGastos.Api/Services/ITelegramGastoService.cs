@@ -5,6 +5,9 @@ public interface ITelegramGastoService
     Task<TelegramGastoPropuestaResult> CrearPropuestaAsync(long chatId, string texto, CancellationToken ct);
     Task<TelegramGastoCallbackResult> ConfirmarAsync(long idGastoPendiente, long chatId, long telegramUserId, CancellationToken ct);
     Task<TelegramGastoCallbackResult> CancelarAsync(long idGastoPendiente, long chatId, long telegramUserId, CancellationToken ct);
+    Task<TelegramGastoEdicionResult> ObtenerPropuestaAsync(long id, long chatId, long telegramUserId, CancellationToken ct);
+    Task<TelegramGastoEdicionResult> CambiarCategoriaAsync(long id, int categoriaId, long chatId, long telegramUserId, CancellationToken ct);
+    Task<TelegramGastoEdicionResult> CambiarMedioPagoAsync(long id, int medioPagoId, long chatId, long telegramUserId, CancellationToken ct);
 }
 
 public sealed record TelegramGastoPropuestaResult(
@@ -24,3 +27,11 @@ public sealed record TelegramGastoCallbackResult(
     DateTimeOffset? FechaGasto = null);
 
 public enum TelegramGastoCallbackEstado { Confirmado, YaConfirmado, Cancelado, YaCancelado, Expirado, NoEncontrado }
+
+public sealed record TelegramGastoEdicionResult(
+    TelegramGastoCallbackEstado Estado,
+    long? IdGastoPendiente = null,
+    decimal? Monto = null,
+    string? Descripcion = null,
+    string? Categoria = null,
+    string? MedioPago = null);

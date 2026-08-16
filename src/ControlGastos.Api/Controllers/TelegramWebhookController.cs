@@ -15,6 +15,8 @@ public sealed class TelegramWebhookController(
     IUsuarioTelegramRepository usuarios,
     ITelegramBotClientService bot,
     ITelegramGastoService gastosTelegram,
+    TelegramMenuService menus,
+    TelegramConsultaService consultas,
     IEvaluadorPresupuestoService evaluadorPresupuestoService,
     IOptions<TelegramOptions> options,
     ILogger<TelegramWebhookController> logger) : ControllerBase
@@ -66,6 +68,15 @@ public sealed class TelegramWebhookController(
             return;
         }
 
+        if (texto.Equals("/ayuda", StringComparison.OrdinalIgnoreCase))
+        {
+            await EnviarSinReintentoAsync(() => bot.EnviarMensajeAsync(chat.Id, "ControlGastos 🤖\n\nRegistrar gasto:\n18.50 almuerzo\n\nTambién puedes usar:\n/gasto 18.50 almuerzo\n\nConsultas:\n/ultimo - último gasto\n/hoy - resumen de hoy\n/mes - resumen del mes", ct), chat.Id);
+            return;
+        }
+        if (texto.Equals("/ultimo", StringComparison.OrdinalIgnoreCase)) { await EnviarSinReintentoAsync(() => EnviarConsultaAsync(chat.Id, consultas.UltimoAsync(chat.Id, ct), ct), chat.Id); return; }
+        if (texto.Equals("/hoy", StringComparison.OrdinalIgnoreCase)) { await EnviarSinReintentoAsync(() => EnviarConsultaAsync(chat.Id, consultas.HoyAsync(chat.Id, ct), ct), chat.Id); return; }
+        if (texto.Equals("/mes", StringComparison.OrdinalIgnoreCase)) { await EnviarSinReintentoAsync(() => EnviarConsultaAsync(chat.Id, consultas.MesAsync(chat.Id, ct), ct), chat.Id); return; }
+
         var textoGasto = texto.StartsWith("/gasto ", StringComparison.OrdinalIgnoreCase)
             ? texto[7..].Trim()
             : texto;
@@ -77,7 +88,7 @@ public sealed class TelegramWebhookController(
                 await EnviarSinReintentoAsync(
                     () => bot.EnviarMensajeConBotonesAsync(
                         chat.Id,
-                        $"Gasto detectado 🧾\n\nMonto: S/ {propuesta.Monto:N2}\nDescripción: {propuesta.Descripcion}\nCategoría: {propuesta.Categoria}\n\n¿Deseas registrarlo?",
+                        $"Gasto detectado 🧾\n\nMonto: S/ {propuesta.Monto:N2}\nDescripción: {propuesta.Descripcion}\nCategoría: {propuesta.Categoria}\nMedio de pago: No indicado\n\n¿Deseas registrarlo?",
                         propuesta.IdGastoPendiente!.Value,
                         ct),
                     chat.Id);
@@ -127,16 +138,39 @@ public sealed class TelegramWebhookController(
     private async Task ProcesarCallbackAsync(TelegramCallbackQuery callback, CancellationToken ct)
     {
         var chat = callback.Message?.Chat;
-        if (chat is null || !TryObtenerAccion(callback.Data, out var confirmar, out var idGastoPendiente))
+        if (chat is null || callback.Message is null || !TryObtenerAccion(callback.Data, out var accion, out var idGastoPendiente, out var idCatalogo))
         {
             await EnviarCallbackSinReintentoAsync(callback.Id, ct);
             return;
         }
 
-        var resultado = confirmar
-            ? await gastosTelegram.ConfirmarAsync(idGastoPendiente, chat.Id, callback.From.Id, ct)
-            : await gastosTelegram.CancelarAsync(idGastoPendiente, chat.Id, callback.From.Id, ct);
         await EnviarCallbackSinReintentoAsync(callback.Id, ct);
+
+        if (accion is "catmenu" or "pagomenu")
+        {
+            var propuesta = await gastosTelegram.ObtenerPropuestaAsync(idGastoPendiente, chat.Id, callback.From.Id, ct);
+            if (propuesta.Estado == TelegramGastoCallbackEstado.Confirmado)
+            {
+                var markup = accion == "catmenu" ? await menus.CrearMenuCategoriasAsync(idGastoPendiente, ct) : await menus.CrearMenuMediosPagoAsync(idGastoPendiente, ct);
+                var texto = accion == "catmenu" ? "Selecciona una categoría:" : "¿Cómo pagaste?";
+                await EnviarSinReintentoAsync(() => bot.EditarMensajeAsync(chat.Id, callback.Message.MessageId, texto, markup, ct), chat.Id);
+            }
+            else await EnviarResultadoEdicionAsync(chat.Id, propuesta.Estado, ct);
+            return;
+        }
+        if (accion is "cat" or "pago" or "volver")
+        {
+            var propuesta = accion == "cat" ? await gastosTelegram.CambiarCategoriaAsync(idGastoPendiente, idCatalogo, chat.Id, callback.From.Id, ct)
+                : accion == "pago" ? await gastosTelegram.CambiarMedioPagoAsync(idGastoPendiente, idCatalogo, chat.Id, callback.From.Id, ct)
+                : await gastosTelegram.ObtenerPropuestaAsync(idGastoPendiente, chat.Id, callback.From.Id, ct);
+            if (propuesta.Estado == TelegramGastoCallbackEstado.Confirmado)
+                await EnviarSinReintentoAsync(() => bot.EditarMensajeAsync(chat.Id, callback.Message.MessageId, TelegramMenuService.FormatearPropuesta(propuesta), TelegramMenuService.CrearMenuPrincipal(idGastoPendiente), ct), chat.Id);
+            else await EnviarResultadoEdicionAsync(chat.Id, propuesta.Estado, ct);
+            return;
+        }
+
+        var resultado = accion == "ok" ? await gastosTelegram.ConfirmarAsync(idGastoPendiente, chat.Id, callback.From.Id, ct)
+            : await gastosTelegram.CancelarAsync(idGastoPendiente, chat.Id, callback.From.Id, ct);
 
         if (resultado.Estado == TelegramGastoCallbackEstado.Confirmado && resultado.IdUsuario.HasValue && resultado.FechaGasto.HasValue)
         {
@@ -162,17 +196,26 @@ public sealed class TelegramWebhookController(
         await EnviarSinReintentoAsync(() => bot.EnviarMensajeAsync(chat.Id, respuesta, ct), chat.Id);
     }
 
-    private static bool TryObtenerAccion(string? data, out bool confirmar, out long idGastoPendiente)
+    private static bool TryObtenerAccion(string? data, out string accion, out long idGastoPendiente, out int idCatalogo)
     {
-        confirmar = false;
+        accion = string.Empty;
         idGastoPendiente = 0;
+        idCatalogo = 0;
         if (string.IsNullOrWhiteSpace(data)) return false;
 
-        var partes = data.Split(':', 2, StringSplitOptions.TrimEntries);
-        if (partes.Length != 2 || !long.TryParse(partes[1], out idGastoPendiente) || idGastoPendiente <= 0) return false;
+        var partes = data.Split(':', StringSplitOptions.TrimEntries);
+        if (partes.Length is not (2 or 3) || !partes[0].StartsWith("gasto_", StringComparison.Ordinal) || !long.TryParse(partes[1], out idGastoPendiente) || idGastoPendiente <= 0) return false;
+        accion = partes[0][6..];
+        if (accion is "cat" or "pago") return partes.Length == 3 && int.TryParse(partes[2], out idCatalogo) && idCatalogo > 0;
+        return partes.Length == 2 && accion is "ok" or "cancel" or "catmenu" or "pagomenu" or "volver";
+    }
 
-        confirmar = partes[0] == "gasto_ok";
-        return confirmar || partes[0] == "gasto_cancel";
+    private Task EnviarConsultaAsync(long chatId, Task<string> consulta, CancellationToken ct) => EnviarConsultaInternaAsync(chatId, consulta, ct);
+    private async Task EnviarConsultaInternaAsync(long chatId, Task<string> consulta, CancellationToken ct) => await bot.EnviarMensajeAsync(chatId, await consulta, ct);
+    private async Task EnviarResultadoEdicionAsync(long chatId, TelegramGastoCallbackEstado estado, CancellationToken ct)
+    {
+        var texto = estado == TelegramGastoCallbackEstado.Expirado ? "Esta solicitud expiró ⏱\nEnvía el gasto nuevamente." : "No encontré una solicitud de gasto válida para este chat.";
+        await EnviarSinReintentoAsync(() => bot.EnviarMensajeAsync(chatId, texto, ct), chatId);
     }
 
     private async Task EnviarCallbackSinReintentoAsync(string callbackId, CancellationToken ct) =>
@@ -213,6 +256,8 @@ public sealed class TelegramCallbackQuery
 
 public sealed class TelegramMessage
 {
+    [JsonPropertyName("message_id")]
+    public long MessageId { get; init; }
     public string? Text { get; init; }
     public TelegramChat? Chat { get; init; }
     public TelegramUser? From { get; init; }

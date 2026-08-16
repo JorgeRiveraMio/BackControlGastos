@@ -16,6 +16,7 @@ public sealed class GastoPendienteTelegramConfiguration : IEntityTypeConfigurati
         builder.Property(x => x.Monto).HasColumnName("mon_gasto").HasPrecision(12, 2).IsRequired();
         builder.Property(x => x.Descripcion).HasColumnName("des_gasto").HasMaxLength(250).IsRequired();
         builder.Property(x => x.IdCategoriaGasto).HasColumnName("idd_categ_gasto");
+        builder.Property(x => x.IdMedioPago).HasColumnName("idd_medio_pago");
         builder.Property(x => x.FechaGasto).HasColumnName("fec_gasto").IsRequired();
         builder.Property(x => x.CodEstado).HasColumnName("cod_estado").HasMaxLength(20).IsRequired();
         builder.Property(x => x.FechaExpiracion).HasColumnName("fec_expiracion").IsRequired();
@@ -25,5 +26,6 @@ public sealed class GastoPendienteTelegramConfiguration : IEntityTypeConfigurati
         builder.HasIndex(x => x.IdUsuario);
         builder.HasIndex(x => x.CodEstado);
         builder.HasOne<CategoriaGasto>().WithMany().HasForeignKey(x => x.IdCategoriaGasto).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<MedioPago>().WithMany().HasForeignKey(x => x.IdMedioPago).OnDelete(DeleteBehavior.Restrict);
     }
 }

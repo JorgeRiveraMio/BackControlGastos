@@ -8,6 +8,7 @@ public sealed class GastoPendienteTelegram
     public decimal Monto { get; set; }
     public required string Descripcion { get; set; }
     public int IdCategoriaGasto { get; set; }
+    public int? IdMedioPago { get; set; }
     public DateTimeOffset FechaGasto { get; set; }
     public required string CodEstado { get; set; }
     public DateTimeOffset FechaExpiracion { get; set; }
