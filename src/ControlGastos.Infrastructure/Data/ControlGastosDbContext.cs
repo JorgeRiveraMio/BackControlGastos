@@ -17,6 +17,7 @@ public sealed class ControlGastosDbContext(
     public DbSet<Alerta> Alertas => Set<Alerta>();
     public DbSet<UsuarioTelegram> UsuariosTelegram => Set<UsuarioTelegram>();
     public DbSet<VinculacionTelegram> VinculacionesTelegram => Set<VinculacionTelegram>();
+    public DbSet<GastoPendienteTelegram> GastosPendientesTelegram => Set<GastoPendienteTelegram>();
 
     public DbSet<Gasto> Gastos => Set<Gasto>();
 

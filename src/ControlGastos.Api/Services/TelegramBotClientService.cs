@@ -9,7 +9,35 @@ public sealed class TelegramBotClientService(
     IOptions<TelegramOptions> options,
     ILogger<TelegramBotClientService> logger) : ITelegramBotClientService
 {
-    public async Task EnviarMensajeAsync(long chatId, string mensaje, CancellationToken ct)
+    public Task EnviarMensajeAsync(long chatId, string mensaje, CancellationToken ct) =>
+        EnviarAsync("sendMessage", new { chat_id = chatId, text = mensaje }, chatId, ct);
+
+    public Task EnviarMensajeConBotonesAsync(long chatId, string mensaje, long idGastoPendiente, CancellationToken ct) =>
+        EnviarAsync(
+            "sendMessage",
+            new
+            {
+                chat_id = chatId,
+                text = mensaje,
+                reply_markup = new
+                {
+                    inline_keyboard = new[]
+                    {
+                        new[]
+                        {
+                            new { text = "Confirmar ✅", callback_data = $"gasto_ok:{idGastoPendiente}" },
+                            new { text = "Cancelar ❌", callback_data = $"gasto_cancel:{idGastoPendiente}" }
+                        }
+                    }
+                }
+            },
+            chatId,
+            ct);
+
+    public Task ResponderCallbackAsync(string callbackQueryId, CancellationToken ct) =>
+        EnviarAsync("answerCallbackQuery", new { callback_query_id = callbackQueryId }, null, ct);
+
+    private async Task EnviarAsync(string metodo, object payload, long? chatId, CancellationToken ct)
     {
         var botToken = options.Value.BotToken;
         if (string.IsNullOrWhiteSpace(botToken))
@@ -18,17 +46,14 @@ public sealed class TelegramBotClientService(
             return;
         }
 
-        // El prefijo '/' fuerza una URI relativa a BaseAddress; sin él, el ':' del token se interpreta como esquema URI.
-        var requestUri = new Uri($"/bot{botToken}/sendMessage", UriKind.Relative);
-        var payload = new { chat_id = chatId, text = mensaje };
-
+        var requestUri = new Uri($"/bot{botToken}/{metodo}", UriKind.Relative);
         try
         {
             using var response = await client.PostAsJsonAsync(requestUri, payload, ct);
             if (!response.IsSuccessStatusCode)
             {
                 logger.LogWarning(
-                    "Telegram rechazó el envío de un mensaje para el chat {ChatId}. Código HTTP: {StatusCode}.",
+                    "Telegram rechazó una solicitud para el chat {ChatId}. Código HTTP: {StatusCode}.",
                     chatId,
                     (int)response.StatusCode);
             }
@@ -38,7 +63,7 @@ public sealed class TelegramBotClientService(
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
             logger.LogError(
-                "No se pudo enviar un mensaje de Telegram para el chat {ChatId}. Tipo de error: {ExceptionType}.",
+                "No se pudo completar una solicitud a Telegram para el chat {ChatId}. Tipo de error: {ExceptionType}.",
                 chatId,
                 exception.GetType().Name);
             throw;

@@ -127,6 +127,9 @@ builder.Services.AddScoped<IUsuarioTelegramRepository, UsuarioTelegramRepository
 builder.Services.AddScoped<IVinculacionTelegramRepository, VinculacionTelegramRepository>();
 builder.Services.Configure<TelegramOptions>(builder.Configuration.GetSection(TelegramOptions.SectionName));
 builder.Services.AddHttpClient<ITelegramBotClientService, TelegramBotClientService>(client => client.BaseAddress = new Uri("https://api.telegram.org/"));
+builder.Services.AddSingleton<ITelegramGastoParser, TelegramGastoParser>();
+builder.Services.AddSingleton<ICategorizadorGastoTelegramService, CategorizadorGastoTelegramService>();
+builder.Services.AddScoped<ITelegramGastoService, TelegramGastoService>();
 builder.Services.AddScoped<ITelegramNotificadorService, TelegramNotificadorService>();
 builder.Services.Configure<SupabaseOptions>(builder.Configuration.GetSection(SupabaseOptions.SectionName));
 builder.Services.AddHttpClient<IComprobanteStorageService, SupabaseComprobanteStorageService>();
