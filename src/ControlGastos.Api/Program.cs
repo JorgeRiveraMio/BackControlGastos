@@ -127,6 +127,24 @@ builder.Services.AddScoped<IUsuarioTelegramRepository, UsuarioTelegramRepository
 builder.Services.AddScoped<IVinculacionTelegramRepository, VinculacionTelegramRepository>();
 builder.Services.Configure<TelegramOptions>(builder.Configuration.GetSection(TelegramOptions.SectionName));
 builder.Services.AddHttpClient<ITelegramBotClientService, TelegramBotClientService>(client => client.BaseAddress = new Uri("https://api.telegram.org/"));
+var ocrApiOptions = builder.Configuration.GetSection(OcrApiOptions.SectionName).Get<OcrApiOptions>()
+    ?? throw new InvalidOperationException("La configuración OcrApi es obligatoria.");
+if (!Uri.TryCreate(ocrApiOptions.BaseUrl, UriKind.Absolute, out var ocrApiBaseUri))
+{
+    throw new InvalidOperationException("La configuración OcrApi:BaseUrl debe ser una URL absoluta válida.");
+}
+
+if (ocrApiOptions.TimeoutSeconds <= 0)
+{
+    throw new InvalidOperationException("La configuración OcrApi:TimeoutSeconds debe ser mayor que cero.");
+}
+
+builder.Services.Configure<OcrApiOptions>(builder.Configuration.GetSection(OcrApiOptions.SectionName));
+builder.Services.AddHttpClient<IReceiptOcrService, ReceiptOcrService>(client =>
+{
+    client.BaseAddress = ocrApiBaseUri;
+    client.Timeout = TimeSpan.FromSeconds(ocrApiOptions.TimeoutSeconds);
+});
 builder.Services.AddSingleton<ITelegramGastoParser, TelegramGastoParser>();
 builder.Services.AddSingleton<ICategorizadorGastoTelegramService, CategorizadorGastoTelegramService>();
 builder.Services.AddScoped<ITelegramGastoService, TelegramGastoService>();
