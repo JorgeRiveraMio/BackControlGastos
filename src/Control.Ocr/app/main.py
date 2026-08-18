@@ -2,6 +2,8 @@ import os
 import tempfile
 from pathlib import Path
 
+import cv2
+import numpy as np
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from starlette.concurrency import run_in_threadpool
 
@@ -24,6 +26,18 @@ parsers = {
     DocumentType.PLIN: PlinParser(classifier),
     DocumentType.GENERIC: GenericReceiptParser(),
 }
+
+
+@app.on_event("startup")
+async def warm_up_ocr() -> None:
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
+        warmup_path = temp_file.name
+
+    try:
+        cv2.imwrite(warmup_path, np.full((32, 32, 3), 255, dtype=np.uint8))
+        await run_in_threadpool(ocr_service.read_document, warmup_path)
+    finally:
+        Path(warmup_path).unlink(missing_ok=True)
 
 
 @app.get("/health")

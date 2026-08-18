@@ -12,7 +12,10 @@ from app.models.ocr_result import BoundingBox, OcrDocument, OcrLine
 class OcrService:
     def __init__(self):
         self.ocr = PaddleOCR(
-            enable_mkldnn=False
+            enable_mkldnn=False,
+            use_doc_orientation_classify=False,
+            use_doc_unwarping=False,
+            use_textline_orientation=False,
         )
 
     def read_document(self, image_path: str) -> OcrDocument:
