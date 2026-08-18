@@ -6,4 +6,5 @@ public interface ITelegramBotClientService
     Task EditarMensajeAsync(long chatId, long messageId, string mensaje, object replyMarkup, CancellationToken ct);
     Task EnviarMensajeConMarkupAsync(long chatId, string mensaje, object replyMarkup, CancellationToken ct);
     Task ResponderCallbackAsync(string callbackQueryId, CancellationToken ct);
+    Task<Stream> DescargarArchivoAsync(string fileId, CancellationToken ct);
 }

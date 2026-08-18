@@ -2,6 +2,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization;
 using ControlGastos.Api.Services;
+using ControlGastos.Core.DTOs;
+using ControlGastos.Core.Exceptions;
 using ControlGastos.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -15,6 +17,7 @@ public sealed class TelegramWebhookController(
     IUsuarioTelegramRepository usuarios,
     ITelegramBotClientService bot,
     ITelegramGastoService gastosTelegram,
+    IReceiptOcrService receiptOcrService,
     TelegramMenuService menus,
     TelegramConsultaService consultas,
     IEvaluadorPresupuestoService evaluadorPresupuestoService,
@@ -55,9 +58,20 @@ public sealed class TelegramWebhookController(
 
     private async Task ProcesarMensajeAsync(TelegramMessage mensaje, CancellationToken ct)
     {
-        var texto = mensaje.Text?.Trim();
         var chat = mensaje.Chat;
-        if (string.IsNullOrWhiteSpace(texto) || chat is null)
+        if (chat is null)
+        {
+            return;
+        }
+
+        if (mensaje.Photo is { Count: > 0 })
+        {
+            await ProcesarFotoAsync(chat.Id, mensaje.Photo, ct);
+            return;
+        }
+
+        var texto = mensaje.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(texto))
         {
             return;
         }
@@ -70,7 +84,7 @@ public sealed class TelegramWebhookController(
 
         if (texto.Equals("/ayuda", StringComparison.OrdinalIgnoreCase))
         {
-            await EnviarSinReintentoAsync(() => bot.EnviarMensajeAsync(chat.Id, "ControlGastos 🤖\n\nRegistrar gasto:\n18.50 almuerzo\n\nTambién puedes usar:\n/gasto 18.50 almuerzo\n\nConsultas:\n/ultimo - último gasto\n/hoy - resumen de hoy\n/mes - resumen del mes", ct), chat.Id);
+            await EnviarSinReintentoAsync(() => bot.EnviarMensajeAsync(chat.Id, "ControlGastos 🤖\n\nRegistrar gasto:\n18.50 almuerzo\n\nTambién puedes enviar una foto de un comprobante Yape o Plin para analizarlo.\n\nConsultas:\n/ultimo - último gasto\n/hoy - resumen de hoy\n/mes - resumen del mes", ct), chat.Id);
             return;
         }
         if (texto.Equals("/ultimo", StringComparison.OrdinalIgnoreCase)) { await EnviarSinReintentoAsync(() => EnviarConsultaAsync(chat.Id, consultas.UltimoAsync(chat.Id, ct), ct), chat.Id); return; }
@@ -109,6 +123,68 @@ public sealed class TelegramWebhookController(
                     chat.Id);
                 break;
         }
+    }
+
+    private async Task ProcesarFotoAsync(long chatId, IReadOnlyList<TelegramPhotoSize> photos, CancellationToken ct)
+    {
+        const long maximumFileSizeBytes = 5 * 1024 * 1024;
+        var photo = photos[^1];
+        if (string.IsNullOrWhiteSpace(photo.FileId))
+        {
+            return;
+        }
+
+        if (photo.FileSize is > maximumFileSizeBytes)
+        {
+            await EnviarSinReintentoAsync(
+                () => bot.EnviarMensajeAsync(chatId, "La imagen supera el tamaño máximo permitido de 5 MB.", ct),
+                chatId);
+            return;
+        }
+
+        await EnviarSinReintentoAsync(
+            () => bot.EnviarMensajeAsync(chatId, "Estoy analizando el comprobante…", ct),
+            chatId);
+
+        try
+        {
+            await using var image = await bot.DescargarArchivoAsync(photo.FileId, ct);
+            var result = await receiptOcrService.AnalyzeAsync(image, "comprobante.jpg", "image/jpeg", ct);
+            await EnviarSinReintentoAsync(
+                () => bot.EnviarMensajeAsync(chatId, FormatearResultadoOcr(result), ct),
+                chatId);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OcrServiceException exception)
+        {
+            logger.LogWarning(exception, "No se pudo analizar un comprobante enviado desde el chat {ChatId}.", chatId);
+            await EnviarSinReintentoAsync(
+                () => bot.EnviarMensajeAsync(chatId, "No pude analizar el comprobante en este momento. Inténtalo nuevamente.", ct),
+                chatId);
+        }
+        catch (HttpRequestException exception)
+        {
+            logger.LogWarning(exception, "No se pudo descargar un comprobante de Telegram para el chat {ChatId}.", chatId);
+            await EnviarSinReintentoAsync(
+                () => bot.EnviarMensajeAsync(chatId, "No pude descargar la imagen enviada. Inténtalo nuevamente.", ct),
+                chatId);
+        }
+    }
+
+    private static string FormatearResultadoOcr(ReceiptOcrResult result)
+    {
+        var lines = new List<string> { "Comprobante analizado 🔎" };
+        if (!string.IsNullOrWhiteSpace(result.DocumentType)) lines.Add($"Tipo: {result.DocumentType}");
+        if (result.Amount.HasValue) lines.Add($"Monto: {result.Currency ?? "S/"} {result.Amount.Value:N2}");
+        if (result.Date.HasValue) lines.Add($"Fecha: {result.Date.Value:yyyy-MM-dd HH:mm}");
+        if (!string.IsNullOrWhiteSpace(result.Recipient)) lines.Add($"Destinatario: {result.Recipient}");
+        if (!string.IsNullOrWhiteSpace(result.Destination)) lines.Add($"Destino: {result.Destination}");
+        if (!string.IsNullOrWhiteSpace(result.OperationNumber)) lines.Add($"Operación: {result.OperationNumber}");
+        lines.Add(result.RequiresReview ? "Revisión recomendada: sí" : "Revisión recomendada: no");
+        return string.Join('\n', lines);
     }
 
     private async Task ProcesarInicioAsync(string token, TelegramMessage mensaje, CancellationToken ct)
@@ -261,6 +337,17 @@ public sealed class TelegramMessage
     public string? Text { get; init; }
     public TelegramChat? Chat { get; init; }
     public TelegramUser? From { get; init; }
+
+    public IReadOnlyList<TelegramPhotoSize>? Photo { get; init; }
+}
+
+public sealed class TelegramPhotoSize
+{
+    [JsonPropertyName("file_id")]
+    public string FileId { get; init; } = string.Empty;
+
+    [JsonPropertyName("file_size")]
+    public long? FileSize { get; init; }
 }
 
 public sealed class TelegramChat

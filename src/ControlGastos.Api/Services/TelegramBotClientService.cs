@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 using ControlGastos.Core.Interfaces;
 using Microsoft.Extensions.Options;
 
@@ -48,6 +49,29 @@ public sealed class TelegramBotClientService(
     public Task ResponderCallbackAsync(string callbackQueryId, CancellationToken ct) =>
         EnviarAsync("answerCallbackQuery", new { callback_query_id = callbackQueryId }, null, ct);
 
+    public async Task<Stream> DescargarArchivoAsync(string fileId, CancellationToken ct)
+    {
+        var botToken = options.Value.BotToken;
+        if (string.IsNullOrWhiteSpace(botToken))
+        {
+            throw new InvalidOperationException("Telegram:BotToken no está configurado.");
+        }
+
+        var getFileUri = new Uri($"/bot{botToken}/getFile?file_id={Uri.EscapeDataString(fileId)}", UriKind.Relative);
+        using var getFileResponse = await client.GetAsync(getFileUri, ct);
+        getFileResponse.EnsureSuccessStatusCode();
+
+        var getFileResult = await getFileResponse.Content.ReadFromJsonAsync<TelegramApiResponse>(cancellationToken: ct);
+        var filePath = getFileResult?.Result?.FilePath;
+        if (!getFileResult?.Ok ?? true || string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new HttpRequestException("Telegram no devolvió una ruta válida para el archivo solicitado.");
+        }
+
+        var fileUri = new Uri($"/file/bot{botToken}/{filePath}", UriKind.Relative);
+        return await client.GetStreamAsync(fileUri, ct);
+    }
+
     private async Task EnviarAsync(string metodo, object payload, long? chatId, CancellationToken ct)
     {
         var botToken = options.Value.BotToken;
@@ -79,5 +103,18 @@ public sealed class TelegramBotClientService(
                 exception.GetType().Name);
             throw;
         }
+    }
+
+    private sealed class TelegramApiResponse
+    {
+        public bool Ok { get; init; }
+
+        public TelegramFile? Result { get; init; }
+    }
+
+    private sealed class TelegramFile
+    {
+        [JsonPropertyName("file_path")]
+        public string? FilePath { get; init; }
     }
 }
